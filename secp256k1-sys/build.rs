@@ -12,13 +12,31 @@
 extern crate cc;
 
 use std::env;
+use std::process::Command;
 
 fn main() {
+    let output = Command::new("riscv64-unknown-elf-gcc")
+        .arg("-print-sysroot")
+        .output()
+        .ok();
+    let sysroot = output
+        .as_ref()
+        .and_then(|o| std::str::from_utf8(&o.stdout).ok())
+        .unwrap_or("")
+        .trim();
+
+    let gcc_toolchain = if sysroot.is_empty() {
+        String::from("/usr/include/")
+    } else {
+        format!("{sysroot}/include")
+    };
+
     // Actual build
     let mut base_config = cc::Build::new();
     base_config.include("depend/secp256k1/")
                .include("depend/secp256k1/include")
                .include("depend/secp256k1/src")
+               .include(gcc_toolchain)
                .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
                .flag_if_supported("-Wno-unused-parameter") // patching out printf causes this warning
                .define("SECP256K1_API", Some(""))
