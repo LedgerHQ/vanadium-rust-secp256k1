@@ -151,6 +151,8 @@ extern crate core;
 #[cfg(bench)]
 extern crate test;
 
+extern crate vanadium_sdk;
+
 #[macro_use]
 mod macros;
 #[macro_use]
