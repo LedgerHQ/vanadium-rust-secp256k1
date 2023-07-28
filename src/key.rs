@@ -19,6 +19,8 @@ use crate::{ecdsa, SECP256K1};
 #[cfg(feature = "bitcoin_hashes")]
 use crate::{hashes, ThirtyTwoByteHash};
 
+use vanadium_sdk;
+
 /// Secret 256-bit key used as `x` in an ECDSA signature.
 ///
 /// # Side channel attacks
@@ -572,15 +574,31 @@ impl PublicKey {
         secp: &Secp256k1<C>,
         tweak: &Scalar,
     ) -> Result<PublicKey, Error> {
-        unsafe {
-            if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx.as_ptr(), &mut self.0, tweak.as_c_ptr())
-                == 1
-            {
-                Ok(self)
-            } else {
-                Err(Error::InvalidTweak)
-            }
+
+        let mut pk = self.serialize_uncompressed();
+        if vanadium_sdk::secp256k1::secp256k1_ec_pubkey_tweak_add(
+            secp.ctx.as_ptr() as *const (),
+            &mut pk,
+            tweak.as_c_ptr(),
+        ) == 1
+        {
+
+            self = PublicKey::from_slice(&pk[..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE])
+                .expect("We know the length is correct and the tweak operation succeeded, so we should have a valid public key");
+            Ok(self)
+        } else {
+            Err(Error::InvalidTweak)
         }
+
+        // unsafe {
+        //     if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx.as_ptr(), &mut self.0, tweak.as_c_ptr())
+        //         == 1
+        //     {
+        //         Ok(self)
+        //     } else {
+        //         Err(Error::InvalidTweak)
+        //     }
+        // }
     }
 
     /// Tweaks a [`PublicKey`] by multiplying by `tweak` modulo the curve order.

@@ -44,6 +44,8 @@ serde = { version = "1.0.103", default-features = false, optional = true }
 bitcoin_hashes = { version = "0.12", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
 
+vanadium_sdk = { path = "../../../rust-sdk" }
+
 [dev-dependencies]
 rand_core = "0.6"
 serde_cbor = "0.10.0"
